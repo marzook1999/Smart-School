@@ -3,15 +3,20 @@
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
-class Feetype_model extends MY_Model {
+class Category_model extends MY_Model {
 
     public function __construct() {
         parent::__construct();
     }
 
+    /**
+     * This funtion takes id as a parameter and will fetch the record.
+     * If id is not provided, then it will fetch all the records form the table.
+     * @param int $id
+     * @return mixed
+     */
     public function get($id = null) {
-        $this->db->select()->from('feetype');
-        $this->db->where('is_system', 0);
+        $this->db->select()->from('categories');
         if ($id != null) {
             $this->db->where('id', $id);
         } else {
@@ -34,9 +39,8 @@ class Feetype_model extends MY_Model {
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
         //=======================Code Start===========================
         $this->db->where('id', $id);
-        $this->db->where('is_system', 0);
-        $this->db->delete('feetype');
-		$message      = DELETE_RECORD_CONSTANT." On  fee type id ".$id;
+        $this->db->delete('categories');
+		$message      = DELETE_RECORD_CONSTANT." On categories id ".$id;
         $action       = "Delete";
         $record_id    = $id;
         $this->log($message, $record_id, $action);
@@ -64,8 +68,8 @@ class Feetype_model extends MY_Model {
         //=======================Code Start===========================
         if (isset($data['id'])) {
             $this->db->where('id', $data['id']);
-            $this->db->update('feetype', $data);
-			$message      = UPDATE_RECORD_CONSTANT." On  fee type id ".$data['id'];
+            $this->db->update('categories', $data);
+			$message      = UPDATE_RECORD_CONSTANT." On  categories id ".$data['id'];
 			$action       = "Update";
 			$record_id    = $data['id'];
 			$this->log($message, $record_id, $action);
@@ -83,9 +87,9 @@ class Feetype_model extends MY_Model {
 				//return $return_value;
 			}
         } else {
-            $this->db->insert('feetype', $data);
+            $this->db->insert('categories', $data);
             $id=$this->db->insert_id();
-			$message      = INSERT_RECORD_CONSTANT." On  fee type id ".$id;
+			$message      = INSERT_RECORD_CONSTANT." On  categories id ".$id;
 			$action       = "Insert";
 			$record_id    = $id;
 			$this->log($message, $record_id, $action);
@@ -97,52 +101,13 @@ class Feetype_model extends MY_Model {
 
 			if ($this->db->trans_status() === false) {
 				# Something went wrong.
-				$this->db->trans_rollback();
+					$this->db->trans_rollback();
 				return false;
 
 			} else {
 				//return $return_value;
 			}
-			return $id;;
-        }
-    }
-
-    public function check_exists($str) {
-        $name = $this->security->xss_clean($str);
-        $id = $this->input->post('id');
-        if (!isset($id)) {
-            $id = 0;
-        }
-
-        if ($this->check_data_exists($name, $id)) {
-            $this->form_validation->set_message('check_exists', 'Record already exists');
-            return FALSE;
-        } else {
-            return TRUE;
-        }
-    }
-
-    function check_data_exists($name, $id) {
-        $this->db->where('type', $name);
-        $this->db->where('id !=', $id);
-
-        $query = $this->db->get('feetype');
-        if ($query->num_rows() > 0) {
-            return TRUE;
-        } else {
-            return FALSE;
-        }
-    }
-
-    function checkFeetypeByName($name) {
-        $this->db->where('type', $name);
-
-
-        $query = $this->db->get('feetype');
-        if ($query->num_rows() > 0) {
-            return $query->row();
-        } else {
-            return FALSE;
+			return $id;
         }
     }
 

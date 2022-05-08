@@ -3,26 +3,18 @@
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
-class Feetype_model extends MY_Model {
+class Itemissue_model extends MY_Model {
 
     public function __construct() {
         parent::__construct();
+        $this->current_session = $this->setting_model->getCurrentSession();
     }
 
     public function get($id = null) {
-        $this->db->select()->from('feetype');
-        $this->db->where('is_system', 0);
-        if ($id != null) {
-            $this->db->where('id', $id);
-        } else {
-            $this->db->order_by('id');
-        }
-        $query = $this->db->get();
-        if ($id != null) {
-            return $query->row_array();
-        } else {
-            return $query->result_array();
-        }
+        $sql = "SELECT item_issue.*,item.name as `item_name`,item.item_category_id,item_category.item_category ,staff.employee_id,staff.name ,staff.surname,roles.name FROM `item_issue` INNER JOIN item on item.id=item_issue.item_id INNER JOIN item_category on item_category.id=item.item_category_id INNER JOIN staff on staff.id=item_issue.issue_to INNER JOIN staff_roles on staff_roles.staff_id =staff.id INNER JOIN roles on roles.id= staff_roles.role_id";
+
+        $query = $this->db->query($sql);
+        return $query->result_array();
     }
 
     /**
@@ -34,9 +26,8 @@ class Feetype_model extends MY_Model {
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
         //=======================Code Start===========================
         $this->db->where('id', $id);
-        $this->db->where('is_system', 0);
-        $this->db->delete('feetype');
-		$message      = DELETE_RECORD_CONSTANT." On  fee type id ".$id;
+        $this->db->delete('item_issue');
+		$message      = DELETE_RECORD_CONSTANT." On item issue id ".$id;
         $action       = "Delete";
         $record_id    = $id;
         $this->log($message, $record_id, $action);
@@ -64,8 +55,8 @@ class Feetype_model extends MY_Model {
         //=======================Code Start===========================
         if (isset($data['id'])) {
             $this->db->where('id', $data['id']);
-            $this->db->update('feetype', $data);
-			$message      = UPDATE_RECORD_CONSTANT." On  fee type id ".$data['id'];
+            $this->db->update('item_issue', $data);
+			$message      = UPDATE_RECORD_CONSTANT." On  item issue id ".$data['id'];
 			$action       = "Update";
 			$record_id    = $data['id'];
 			$this->log($message, $record_id, $action);
@@ -83,11 +74,11 @@ class Feetype_model extends MY_Model {
 				//return $return_value;
 			}
         } else {
-            $this->db->insert('feetype', $data);
-            $id=$this->db->insert_id();
-			$message      = INSERT_RECORD_CONSTANT." On  fee type id ".$id;
+            $this->db->insert('item_issue', $data);
+            $insert_id = $this->db->insert_id();
+			$message      = INSERT_RECORD_CONSTANT." On item issue id ".$insert_id;
 			$action       = "Insert";
-			$record_id    = $id;
+			$record_id    = $insert_id;
 			$this->log($message, $record_id, $action);
 			//echo $this->db->last_query();die;
 			//======================Code End==============================
@@ -103,47 +94,20 @@ class Feetype_model extends MY_Model {
 			} else {
 				//return $return_value;
 			}
-			return $id;;
+			return $insert_id;
         }
     }
 
-    public function check_exists($str) {
-        $name = $this->security->xss_clean($str);
-        $id = $this->input->post('id');
-        if (!isset($id)) {
-            $id = 0;
-        }
 
-        if ($this->check_data_exists($name, $id)) {
-            $this->form_validation->set_message('check_exists', 'Record already exists');
-            return FALSE;
-        } else {
-            return TRUE;
-        }
-    }
+      public function get_IssueInventoryReport($start_date,$end_date) {
 
-    function check_data_exists($name, $id) {
-        $this->db->where('type', $name);
-        $this->db->where('id !=', $id);
+        $condition=" and date_format(item_issue.issue_date,'%Y-%m-%d') between '".$start_date."' and '".$end_date."'";
 
-        $query = $this->db->get('feetype');
-        if ($query->num_rows() > 0) {
-            return TRUE;
-        } else {
-            return FALSE;
-        }
-    }
+        $sql = "SELECT item_issue.*,item.name as `item_name`,item.item_category_id,item_category.item_category ,staff.employee_id,staff.name ,staff.surname,roles.name FROM `item_issue` INNER JOIN item on item.id=item_issue.item_id INNER JOIN item_category on item_category.id=item.item_category_id INNER JOIN staff on staff.id=item_issue.issue_to INNER JOIN staff_roles on staff_roles.staff_id =staff.id INNER JOIN roles on roles.id= staff_roles.role_id where 1 ".$condition;
 
-    function checkFeetypeByName($name) {
-        $this->db->where('type', $name);
+        $query = $this->db->query($sql);
+        return $query->result_array();
 
-
-        $query = $this->db->get('feetype');
-        if ($query->num_rows() > 0) {
-            return $query->row();
-        } else {
-            return FALSE;
-        }
     }
 
 }

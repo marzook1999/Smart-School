@@ -3,15 +3,14 @@
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
-class Feetype_model extends MY_Model {
+class Session_model extends MY_Model {
 
     public function __construct() {
         parent::__construct();
     }
 
     public function get($id = null) {
-        $this->db->select()->from('feetype');
-        $this->db->where('is_system', 0);
+        $this->db->select()->from('sessions');
         if ($id != null) {
             $this->db->where('id', $id);
         } else {
@@ -25,18 +24,36 @@ class Feetype_model extends MY_Model {
         }
     }
 
-    /**
-     * This function will delete the record based on the id
-     * @param $id
-     */
+    public function getAllSession() {
+        $sql = "SELECT sessions.*, IFNULL(sch_settings.session_id, 0) as `active` FROM `sessions` LEFT JOIN sch_settings ON sessions.id=sch_settings.session_id";
+        $query = $this->db->query($sql);
+        return $query->result_array();
+    }
+
+    public function getPreSession($session_id) {
+        $sql = "select * from sessions where id in (select max(id) from sessions where id < $session_id)";
+
+        $query = $this->db->query($sql);
+        return $query->row();
+    }
+
+    public function getStudentAcademicSession($student_id = null) {
+        $this->db->select('sessions.*')->from('sessions');
+        $this->db->join('student_session', 'sessions.id = student_session.session_id');
+        $this->db->where('student_session.student_id', $student_id);
+        $this->db->group_by('student_session.session_id'); 
+        $this->db->order_by('sessions.id');
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+
     public function remove($id) {
 		$this->db->trans_start(); # Starting Transaction
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
         //=======================Code Start===========================
         $this->db->where('id', $id);
-        $this->db->where('is_system', 0);
-        $this->db->delete('feetype');
-		$message      = DELETE_RECORD_CONSTANT." On  fee type id ".$id;
+        $this->db->delete('sessions');
+		$message      = DELETE_RECORD_CONSTANT." On sessions id ".$id;
         $action       = "Delete";
         $record_id    = $id;
         $this->log($message, $record_id, $action);
@@ -52,20 +69,14 @@ class Feetype_model extends MY_Model {
         }
     }
 
-    /**
-     * This function will take the post data passed from the controller
-     * If id is present, then it will do an update
-     * else an insert. One function doing both add and edit.
-     * @param $data
-     */
     public function add($data) {
 		$this->db->trans_start(); # Starting Transaction
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
         //=======================Code Start===========================
         if (isset($data['id'])) {
             $this->db->where('id', $data['id']);
-            $this->db->update('feetype', $data);
-			$message      = UPDATE_RECORD_CONSTANT." On  fee type id ".$data['id'];
+            $this->db->update('sessions', $data);
+			$message      = UPDATE_RECORD_CONSTANT." On sessions id ".$data['id'];
 			$action       = "Update";
 			$record_id    = $data['id'];
 			$this->log($message, $record_id, $action);
@@ -83,11 +94,11 @@ class Feetype_model extends MY_Model {
 				//return $return_value;
 			}
         } else {
-            $this->db->insert('feetype', $data);
-            $id=$this->db->insert_id();
-			$message      = INSERT_RECORD_CONSTANT." On  fee type id ".$id;
+            $this->db->insert('sessions', $data);
+			$insert_id = $this->db->insert_id();
+			$message      = INSERT_RECORD_CONSTANT." On sessions id ".$insert_id;
 			$action       = "Insert";
-			$record_id    = $id;
+			$record_id    = $insert_id;
 			$this->log($message, $record_id, $action);
 			//echo $this->db->last_query();die;
 			//======================Code End==============================
@@ -103,46 +114,6 @@ class Feetype_model extends MY_Model {
 			} else {
 				//return $return_value;
 			}
-			return $id;;
-        }
-    }
-
-    public function check_exists($str) {
-        $name = $this->security->xss_clean($str);
-        $id = $this->input->post('id');
-        if (!isset($id)) {
-            $id = 0;
-        }
-
-        if ($this->check_data_exists($name, $id)) {
-            $this->form_validation->set_message('check_exists', 'Record already exists');
-            return FALSE;
-        } else {
-            return TRUE;
-        }
-    }
-
-    function check_data_exists($name, $id) {
-        $this->db->where('type', $name);
-        $this->db->where('id !=', $id);
-
-        $query = $this->db->get('feetype');
-        if ($query->num_rows() > 0) {
-            return TRUE;
-        } else {
-            return FALSE;
-        }
-    }
-
-    function checkFeetypeByName($name) {
-        $this->db->where('type', $name);
-
-
-        $query = $this->db->get('feetype');
-        if ($query->num_rows() > 0) {
-            return $query->row();
-        } else {
-            return FALSE;
         }
     }
 

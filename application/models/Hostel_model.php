@@ -3,19 +3,25 @@
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
-class Feetype_model extends MY_Model {
+class Hostel_model extends MY_Model {
 
     public function __construct() {
         parent::__construct();
+        $this->current_session = $this->setting_model->getCurrentSession();
     }
 
+    /**
+     * This funtion takes id as a parameter and will fetch the record.
+     * If id is not provided, then it will fetch all the records form the table.
+     * @param int $id
+     * @return mixed
+     */
     public function get($id = null) {
-        $this->db->select()->from('feetype');
-        $this->db->where('is_system', 0);
+        $this->db->select()->from('hostel');
         if ($id != null) {
-            $this->db->where('id', $id);
+            $this->db->where('hostel.id', $id);
         } else {
-            $this->db->order_by('id');
+            $this->db->order_by('hostel.id');
         }
         $query = $this->db->get();
         if ($id != null) {
@@ -34,9 +40,8 @@ class Feetype_model extends MY_Model {
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
         //=======================Code Start===========================
         $this->db->where('id', $id);
-        $this->db->where('is_system', 0);
-        $this->db->delete('feetype');
-		$message      = DELETE_RECORD_CONSTANT." On  fee type id ".$id;
+        $this->db->delete('hostel');
+		$message      = DELETE_RECORD_CONSTANT." On hostel id ".$id;
         $action       = "Delete";
         $record_id    = $id;
         $this->log($message, $record_id, $action);
@@ -58,14 +63,14 @@ class Feetype_model extends MY_Model {
      * else an insert. One function doing both add and edit.
      * @param $data
      */
-    public function add($data) {
+    public function addhostel($data) {
 		$this->db->trans_start(); # Starting Transaction
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
         //=======================Code Start===========================
         if (isset($data['id'])) {
             $this->db->where('id', $data['id']);
-            $this->db->update('feetype', $data);
-			$message      = UPDATE_RECORD_CONSTANT." On  fee type id ".$data['id'];
+            $this->db->update('hostel', $data);
+			$message      = UPDATE_RECORD_CONSTANT." On  hostel id ".$data['id'];
 			$action       = "Update";
 			$record_id    = $data['id'];
 			$this->log($message, $record_id, $action);
@@ -83,11 +88,11 @@ class Feetype_model extends MY_Model {
 				//return $return_value;
 			}
         } else {
-            $this->db->insert('feetype', $data);
-            $id=$this->db->insert_id();
-			$message      = INSERT_RECORD_CONSTANT." On  fee type id ".$id;
+            $this->db->insert('hostel', $data);
+			$insert_id = $this->db->insert_id();
+            $message      = INSERT_RECORD_CONSTANT." On hostel id ".$insert_id;
 			$action       = "Insert";
-			$record_id    = $id;
+			$record_id    = $insert_id;
 			$this->log($message, $record_id, $action);
 			//echo $this->db->last_query();die;
 			//======================Code End==============================
@@ -103,47 +108,23 @@ class Feetype_model extends MY_Model {
 			} else {
 				//return $return_value;
 			}
-			return $id;;
+			return $insert_id;
         }
     }
 
-    public function check_exists($str) {
-        $name = $this->security->xss_clean($str);
-        $id = $this->input->post('id');
-        if (!isset($id)) {
-            $id = 0;
-        }
+    public function listhostel() {
 
-        if ($this->check_data_exists($name, $id)) {
-            $this->form_validation->set_message('check_exists', 'Record already exists');
-            return FALSE;
-        } else {
-            return TRUE;
-        }
+        $this->db->select()->from('hostel');
+        $listhostel = $this->db->get();
+        return $listhostel->result_array();
     }
 
-    function check_data_exists($name, $id) {
-        $this->db->where('type', $name);
-        $this->db->where('id !=', $id);
+    public function get_hostel($id){
 
-        $query = $this->db->get('feetype');
-        if ($query->num_rows() > 0) {
-            return TRUE;
-        } else {
-            return FALSE;
-        }
-    }
+     $query = $this->db->where("id",$id)->get("hostel_rooms");
 
-    function checkFeetypeByName($name) {
-        $this->db->where('type', $name);
+     return $query->row_array();
 
-
-        $query = $this->db->get('feetype');
-        if ($query->num_rows() > 0) {
-            return $query->row();
-        } else {
-            return FALSE;
-        }
     }
 
 }
